@@ -113,7 +113,7 @@ def cluster_go(clustered_genes, cluster_number=None, type=None):
         df (DataFrame): pandas DataFrame of gene ontologies, their class, p-values, corrected p-values, number of genes in study, expected number in population and the gene symbols.
     """
     mapper, goeaobj, GO_items, inv_map= _goatools_setup(GeneID2nt_human)
-    if type is not None:
+    if type:
         if cluster_number:
             df = _go_it(clustered_genes[cluster_number], mapper, goeaobj, GO_items, inv_map,)
         else:
@@ -243,6 +243,10 @@ def gsea_ranking(clustered_genes, classification_map, Ensembl, ensembl_id, clust
                     dataframe.append((label, max_exp))
             df = pd.DataFrame(dataframe, columns=['gene_symbol', 'max_exp'])
             df_sorted = df.sort_values(by='max_exp', ascending=False)
+
+    df_sorted.replace("", np.nan, inplace=True)
+    df_sorted.dropna(subset=['gene_symbol'], inplace=True)
+    df_sorted.dropna(inplace=True)
     return df_sorted
 
 #Gene Set Enrichment
@@ -264,12 +268,15 @@ def geneset_into_dict(jsonfile):
         geneset_dict[name] = gene_symbols
     return geneset_dict
 
-def enrichment(ranking, geneset, min_size, max_size):
+def enrichment(ranking, geneset, min_size, max_size, term_to_plot=0):
     """
     Executes gene set enrichment analysis.
     Parameters:
         ranking (DataFrame): pandas DataFrame with ONLY 2 columns. First, the gene symbols and second, their maximum expression.
         geneset (dict or string): use your custom gene set from 'write_geneset' (dictionary) or choose one form the Enrichr library (str).
+        min_size: minimum number of matches between sets.
+        max_size: maximum number of matches between sets.
+        term_to_plot: enrichment term from dataframe to plot.
     Returns:
         out_df (DataFrame): pandas DataFrame with Term, False Discovery Rate(fdr), Enrichment Score (es), and Normalized Enrichment Score (nes).
         Plots Enrichment Score and Ranked Metric acording to Gene Rank.
@@ -285,9 +292,9 @@ def enrichment(ranking, geneset, min_size, max_size):
                 pre_res.results[term]['es'],
                 pre_res.results[term]['nes']])
 
-    out_df = pd.DataFrame(out, columns = ['Term','false discovery rate', 'enrichment score', 'normalized es']).sort_values(by=['false discovery rate','enrichment score'], ascending=[True,True]).reset_index(drop = True)
+    out_df = pd.DataFrame(out, columns = ['Term','fdr', 'es', 'nes']).sort_values(by=['fdr','es'], ascending=[True,True]).reset_index(drop = True)
     print(out_df)
-    term_to_graph = out_df.iloc[0].Term
+    term_to_graph = out_df.iloc[term_to_plot].Term
 
     gp.plot.gseaplot(**pre_res.results[term_to_graph], rank_metric=pre_res.ranking, term=term_to_graph)
     return out_df

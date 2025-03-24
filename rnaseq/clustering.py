@@ -57,7 +57,7 @@ def hierarchical_matrix(data_frame, method, metric):
     
     #preserve_input= false, usa menos memoria
     
-    linkage_matrix = fc.linkage(data_frame, method=method, metric=metric, preserve_input='True')
+    linkage_matrix = fc.linkage(data_frame, method=method, metric=metric, preserve_input=True)
             
     return linkage_matrix
 
@@ -86,22 +86,11 @@ def hierarchical_matrix_all(data_frame, methods, metrics):
             if (method == 'centroid' or method == 'median' or method == 'ward') and metric != 'euclidean':
                 # Skip combination if method is 'centroid', 'median', or 'ward' but metric is not 'euclidean'
                 continue
-            linkage_matrix = fc.linkage(data_frame, method=method, metric=metric, preserve_input='True')
+            linkage_matrix = fc.linkage(data_frame, method=method, metric=metric, preserve_input=True)
             key = f"{method}_{metric}"
             linkage_matrices[key] = linkage_matrix
     
     return linkage_matrices
-
-
-# Hierarchical Partiton of the clusters
-
-
-#The 't' parameter represents the distance threshold that determines the maximum dissimilarity allowed for 
-#two observations to be assigned to the same cluster. A smaller 't' value will result in more clusters and
-#potentially finer-grained clustering, while a larger 't' value will lead to fewer clusters and potentially 
-#coarser-grained clustering. You can experiment with different threshold values to find the clustering granularity
-#that best suits your data and problem domain. Adjusting the 't' parameter allows you to control the trade-off 
-#between having more detailed clusters versus larger, more generalized clusters.
 
 def hierarchical_partition_labels(linkage_matrix, criterion, n):
     """
@@ -268,16 +257,16 @@ def plot_dendrogram(linkage_matrix, labels, cluster_threshold, cmap):
     - None: The function displays the dendrogram plot but does not return any values.
     
     """
-    plt.figure(figsize=(20, 12))
+    plt.figure(figsize=(20,20))
     plt.title("Dendrogram")
-    plt.xlabel("Samples") 
+    plt.xlabel("Samples")
     plt.ylabel("Distance")
     sbcmap = sb.color_palette(cmap, n_colors=len(set(labels)))
     set_link_color_palette([colors.rgb2hex(rgb[:3]) for rgb in sbcmap])
     dendrogram(Z=linkage_matrix, color_threshold=cluster_threshold, labels=labels, above_threshold_color='#b3b3b3')
-    plt.tight_layout
+    
+    return plt.show()
 
-    plt.show()
 
 
 #%% BI-CLUSTERIRNG
@@ -308,8 +297,8 @@ def bicluster(data, method, metric, figsize=(20, 20), dendrogram_ratio=(0.2, 0.2
 
 #%% 9. K-Testing
 
-# Cluster Stability using bootstrapping (Adjusted Rand Index) adapted.
-def cluster_stability(X, est, n_iter=20, random_state=None):
+# Cluster Stability using bootstrapping (Adjusted Rand Index)
+def cluster_stability(X, est, n_iter=20):
     labels = []
     indices = []
     for i in range(n_iter):
@@ -394,13 +383,12 @@ def KMeans_clustering(main_map, metagene_map, n_clusters):
     Returns:
         cluster_labels_grid (list): list of shape (map_size, map_size) where each entry is the cluster to which the node in the sam eposition belongs to.
     """
-    kmeans = KMeans(n_clusters=n_clusters, n_init='auto', random_state=3, verbose=0,init="k-means++").fit(metagene_map)
+    kmeans = KMeans(n_clusters=n_clusters, n_init='auto', random_state=42, verbose=0,init="k-means++").fit(metagene_map)
     cluster_labels = kmeans.labels_
     cluster_labels_grid = cluster_labels.reshape((main_map.map_size, main_map.map_size))
     custom_colormap=['#9e0142','#d53e4f', '#f46d43', '#fdae61', '#fee08b', '#ffffbf', '#d9ef8b', '#abdda4', '#66c2a5', '#3288bd', '#5e4fa2', '#ffffff', '#878787', '#1a1a1a', '#c51b7d', '#b2abd2', '#4d9221', '#35978f', '#313695', '#8c510a']
-    cmap = colors.ListedColormap(custom_colormap)
+    cmap = colors.ListedColormap(custom_colormap[:n_clusters])
     plt.matshow((cluster_labels_grid), cmap=cmap, origin='lower')
-    plt.grid(False)
     plt.title('KMeans Clustering of Metagenes')
     plt.colorbar(label='Cluster Label').set_ticks(np.arange(0,n_clusters,1))
     plt.show()
@@ -431,7 +419,7 @@ def KMeans_clustering(main_map, metagene_map, n_clusters):
         keys.append(key)
         items.append(average_silhouette_scores[key])
     plt.bar(keys,items)
-    plt.axhline(silhouette_avg, color='red', linestyle='--')
+    plt.axhline(0.25, color='red', linestyle='--')
     plt.xlabel('Cluster Label')
     plt.ylabel('Silhouette Score')
     plt.xticks(range(0,n_clusters,1))
@@ -451,10 +439,10 @@ def clustered_symbols_dict(cluster_labels_grid, map_size, genesymbol_grid):
     for y in range(map_size):
         for x in range(map_size):
             try:
-                if cluster_labels_grid[x][y] in clustered_genes_symbols:
-                    clustered_genes_symbols[cluster_labels_grid[x][y]].extend(genesymbol_grid[(x, y)])
+                if cluster_labels_grid[y][x] in clustered_genes_symbols:
+                    clustered_genes_symbols[cluster_labels_grid[y][x]].extend(genesymbol_grid[(x, y)])
                 else:
-                    clustered_genes_symbols[cluster_labels_grid[x][y]] = list(genesymbol_grid[(x, y)])
+                    clustered_genes_symbols[cluster_labels_grid[y][x]] = list(genesymbol_grid[(x, y)])
             except KeyError:
                 continue
     return clustered_genes_symbols
@@ -472,10 +460,10 @@ def clustered_ids_dict(cluster_labels_grid, map_size, geneid_grid):
     for y in range(map_size):
         for x in range(map_size):
             try:
-                if cluster_labels_grid[x][y] in clustered_genes_ids:
-                    clustered_genes_ids[cluster_labels_grid[x][y]].extend(geneid_grid[(x, y)])
+                if cluster_labels_grid[y][x] in clustered_genes_ids:
+                    clustered_genes_ids[cluster_labels_grid[y][x]].extend(geneid_grid[(x, y)])
                 else:
-                    clustered_genes_ids[cluster_labels_grid[x][y]] = list(geneid_grid[(x, y)])
+                    clustered_genes_ids[cluster_labels_grid[y][x]] = list(geneid_grid[(x, y)])
             except KeyError:
                 continue
     return clustered_genes_ids
@@ -504,12 +492,12 @@ def evidence_accumulation(data, k, nensemble, linkage):
     print("Silhouette Score: {}".format(silhouette_score(data, matrix.flatten())))
     print("Davies-Bouldin: {}".format(davies_bouldin_score(data, matrix.flatten())))
     print("Calinski-Harabasz: {}".format(calinski_harabasz_score(data, matrix.flatten())))
-    # custom_colormap=['#9e0142','#d53e4f', '#f46d43', '#fdae61', '#fee08b', '#ffffbf', '#d9ef8b', '#abdda4', '#66c2a5', '#3288bd', '#5e4fa2', '#ffffff', '#878787', '#1a1a1a', '#c51b7d', '#b2abd2', '#4d9221', '#35978f', '#313695', '#8c510a']
-    # norm = plt.Normalize(0, len(custom_colormap) - 1)
-    # cmap = colors.ListedColormap(custom_colormap)
-    plt.matshow((matrix), cmap='gist_ncar', origin='lower')
+    custom_colormap=['#9e0142','#d53e4f', '#f46d43', '#fdae61', '#fee08b', '#ffffbf', '#d9ef8b', '#abdda4', '#66c2a5', '#3288bd', '#5e4fa2', '#ffffff', '#878787', '#1a1a1a', '#c51b7d', '#b2abd2', '#4d9221', '#35978f', '#313695', '#8c510a']
+    norm = plt.Normalize(0, len(custom_colormap) - 1)
+    cmap = colors.ListedColormap(custom_colormap)
+    plt.matshow((matrix), cmap=cmap, origin='lower')
     plt.title('KMeans Clustering of Metagenes')
-    plt.colorbar(label='Cluster Label').set_ticks(np.arange(0, matrix.max() + 1, 1))
+    plt.colorbar(label='Cluster Label').set_ticks(np.arange(0,19,1))
     plt.show()
 
     clusters_of_interest = range(0,len(EAC[0]))
@@ -538,9 +526,8 @@ def evidence_accumulation(data, k, nensemble, linkage):
         keys.append(key)
         items.append(average_silhouette_scores[key])
     plt.bar(keys,items)
-    plt.axhline(silhouette_avg, color='red', linestyle='--')
+    plt.axhline(0.25, color='red', linestyle='--')
     plt.xticks(range(0,len(EAC[0]),1))
-    plt.grid(False)
     plt.show
     return matrix
 

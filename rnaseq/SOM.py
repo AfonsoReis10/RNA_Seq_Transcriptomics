@@ -73,7 +73,7 @@ def _gene_search(genenames, classification_map, ensembl_id):
     if ensembl_id==True:
         genetranslation=[]
         for i in range(len(genenames)):
-            #falta uma condição dentro deste ciclo porque ele buga caso um gene não exista no ensembl tipo o tbxt que na verdade é o tbx5
+            #falta uma condição (try) dentro deste ciclo porque ele buga caso um gene não exista no ensembl tipo o tbxt que na verdade é o tbx5
             found = False
             gene = Ensembl.genes_by_name(genenames[i])
             gene_ensembl_id = gene[0].gene_id

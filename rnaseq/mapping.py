@@ -31,10 +31,26 @@ def genegrid_dict(classification):
 # 5.1 Correlação
 
 def correlation(main_map, classification, metagene_map):
+
     """
-    Plots average correlation between all genes allocated to a node of the grid
-    and its metagene
+    Computes and plots the average correlation between each gene associated with 
+    a grid node and its respective metagene.
+
+    Parameters:
+        main_map: An object that contains the grid map structure, with a specified 
+        map size (`map_size`).
+        classification: Classification data, which indicates which genes are 
+        associated with each grid node.
+        metagene_map: A map of metagenes that represents the averaged gene 
+        expression values per grid node.
+    
+    Returns:
+        The function displays a heatmap of the correlation values, using a color map 
+        (coolwarm) to differentiate high and low correlations, with a color bar 
+        indicating the range.
     """
+    
+
     genegrid=genegrid_dict(classification)
     correlation_map = []
     mcounter=0
@@ -63,12 +79,22 @@ def correlation(main_map, classification, metagene_map):
     plt.title('Mean Gene-Metagene Correlation')
     plt.show()
 
-# 5.2 Gene-Metagene Variance
+# 5.2 Gene-Metagene Variance (não está em uso)
 
 def avg_variance(main_map, genegrid):
     """
-    Plots variance grid between all genes allocated to a node of the grid
-    and its metagene
+    Computes and plots the average variance of gene expression levels for all genes 
+    associated with each grid node.
+
+    Parameters:
+        main_map: An object that contains the grid map structure, with a specified 
+                  map size (`map_size`).
+        genegrid: A dictionary mapping each grid node (i, j) to a list of genes and 
+                  their associated expression values.    
+    Returns:
+        Displays a heatmap of the logged variance values, using a color map 
+        (coolwarm) to show regions with high and low variance, and a color bar 
+        indicating the range.
     """
     avg_variance_map = []
     mcounter=0
@@ -101,7 +127,17 @@ def avg_variance(main_map, genegrid):
 
 def variance(main_map, metagene_map):
     """
-    Plots variance grid of the metagenes
+    Computes and plots the variance of the metagene associated with each grid node.
+
+    Parameters:
+        main_map: An object that contains the grid map structure, with a specified 
+                  map size (`map_size`).
+        genegrid: A dictionary mapping each grid node (i, j) to a list of genes and 
+                  their associated expression values.    
+    Returns:
+        Displays a heatmap of the logged variance values, using a color map 
+        (coolwarm) to show regions with high and low variance, and a color bar 
+        indicating the range.
     """
     variance_map = []
     for m in range(len(metagene_map)):
@@ -134,8 +170,15 @@ def variance(main_map, metagene_map):
 
 def entropy(main_map, metagene_map):
     """
-    Plots entropy grid of the metagenes, differentiating them between 3 expressions states,
-    underexpressed, overexpressed and inconclusive.
+    Plots entropy grid of the metagenes, differentiating them between three expression states:
+    underexpressed, overexpressed, and inconclusive.
+
+    Parameters:
+        main_map: Object containing map details, particularly the grid size (map_size).
+        metagene_map: 2D array containing metagene expression values for each node.
+
+    Returns:
+        Displays a heatmap visualizing the entropy across the grid nodes.
     """
     flat_metagenes=metagene_map.flatten()
     percentile25=np.percentile(flat_metagenes,25)
@@ -179,13 +222,24 @@ def entropy(main_map, metagene_map):
 #%% 6. Averaged Maps w/ Gene Labels
 def averaged_maps(main_map_avg, dataset, nreplicates, genelist, classification, ensemblid, n_rows, n_col):
     """
-    Plots the averaged SOMs.
-    Function gene_search is used to find coordinates of certain genes to plot on top of the SOM.
-    Set n_col (int) to the number of columns of your figure and n_rows (int) to the number of rows.
-    Title (int) should stay at 0. Used to iterate through the sample names to give each figure its respective name.
-    """
-    stage=_gene_search(genenames=genelist, classification_map=classification.classification_map, ensembl_id=ensemblid)
+    Plots the averaged Self-Organizing Maps (SOMs) for the dataset. Highlights specific gene coordinates on each plot.
     
+    Parameters:
+        main_map_avg: List of averaged SOM maps to be plotted.
+        dataset: DataFrame containing sample names to use as titles.
+        nreplicates: Number of replicates per sample.
+        genelist: List of gene names to locate within the classification map.
+        classification: Classification object with SOM node classifications.
+        ensemblid: Identifier map for genes.
+        n_rows: Number of rows for subplots in the figure.
+        n_col: Number of columns for subplots in the figure.
+        
+    Returns:
+        Displays a grid of SOM maps with highlighted gene locations.
+    """
+
+    stage=_gene_search(genenames=genelist, classification_map=classification.classification_map, ensembl_id=ensemblid)
+
     n_col=n_col
     n_rows=n_rows
     title=0
@@ -193,24 +247,17 @@ def averaged_maps(main_map_avg, dataset, nreplicates, genelist, classification, 
     gs = fig.add_gridspec(n_rows, n_col)
     xscatter=[]
     yscatter=[]
-    
-
     for i in range(len(stage)): 
         xscatter.append(stage[i][0])
         yscatter.append(stage[i][1]) 
 
     for i, map_index in enumerate(range(len(main_map_avg))):
-
-        titulo=dataset.columns[title]
-        for char in titulo:
-                if char == '"':
-                    titulo=titulo.replace('"', '')
         row = i // n_col
         col = i % n_col
         ax = fig.add_subplot(gs[row, col])
         im = ax.imshow(main_map_avg[map_index], cmap='jet', interpolation='none', origin='lower')
         ax.scatter(yscatter, xscatter, c='#000000', marker='o')
-        ax.set_title(titulo[:-2])
+        ax.set_title(dataset.columns[title])
         ax.tick_params(left=False, right=False, labelleft=False, labelbottom=False, bottom=False)
         fig.colorbar(im, ax=ax, shrink=0.2, ticks=[np.min(main_map_avg[map_index]),np.min(main_map_avg[map_index])/2, 0, np.max(main_map_avg[map_index])/2, np.max(main_map_avg[map_index])])
         title+=nreplicates
@@ -220,9 +267,16 @@ def averaged_maps(main_map_avg, dataset, nreplicates, genelist, classification, 
 
 def allmaps(main_map, dataset, ncolumns, output_folder_name):
     """
-    Plots every sample and its corresponding SOM. Set 'reps' as the number of lines in your figure and 'samps' as the
-    number of columns. Does not support missing data.
-    Set n_col (int) to the number of columns of your figure and n_rows (int) to the number of rows.
+    Plots every sample and its corresponding SOM map, arranging plots in a grid.
+    
+    Parameters:
+        main_map: Object with SOM weights (typically a 3D array).
+        dataset: DataFrame containing sample names used as plot titles.
+        ncolumns: Number of columns in the figure layout.
+        output_folder_name: Name of the folder to save individual sample maps.
+    
+    Returns:
+        Displays a grid of SOM maps for all samples and saves each sample plot individually.
     """
 
     output_folder = output_folder_name
@@ -249,18 +303,18 @@ def allmaps(main_map, dataset, ncolumns, output_folder_name):
                 ax = axs[i, j]
                 im = ax.imshow(main_map.weights[:,:,sum], cmap='jet', interpolation='none', origin='lower')
                 ax.tick_params(left=False, right=False, labelleft=False, labelbottom=False, bottom=False)
-                ax.set_title(titulo[51:-29])
+                ax.set_title(titulo)
                 cbar = fig.colorbar(im, ax=ax, fraction=0.05, pad=0.04)
                 
                 
                 single_fig, single_ax = plt.subplots()
                 single_im = single_ax.imshow(main_map.weights[:,:,sum], cmap='jet', interpolation='none', origin='lower')
                 single_ax.tick_params(left=False, right=False, labelleft=False, labelbottom=False, bottom=False)
-                single_ax.set_title(titulo[51:-29])
+                single_ax.set_title(dataset.columns[sum])
                 single_cbar = single_fig.colorbar(single_im, ax=single_ax, fraction=0.05, pad=0.04)
                 
                 
-                file_name = os.path.join(output_folder, f"figure_{titulo[51:-29]}.png")
+                file_name = os.path.join(output_folder, f"figure_{titulo}.png")
                 single_fig.savefig(file_name, bbox_inches='tight')
                 plt.close(single_fig)
                 
@@ -276,8 +330,16 @@ def allmaps(main_map, dataset, ncolumns, output_folder_name):
 
 def scaled_maps(main_map, dataset, nrows, ncolumns):
     """
-    Plots all maps with a single colorscale.
-    Set n_col (int) to the number of columns of your figure and n_rows (int) to the number of rows.
+    Plots all SOM maps with a unified color scale across all maps.
+
+    Parameters:
+        main_map: Object with SOM weights (3D array representing each sample's map).
+        dataset: DataFrame containing sample names used as plot titles.
+        nrows: Number of rows in the figure grid layout.
+        ncolumns: Number of columns in the figure grid layout.
+    
+    Returns:
+        Displays all SOM maps with a single color scale.
     """
 
     n_rows = nrows
@@ -290,8 +352,8 @@ def scaled_maps(main_map, dataset, nrows, ncolumns):
     title = 0
     
     try:
-        for i in range(n_col):
-            for j in range(n_rows):
+        for j in range(n_rows):
+            for i in range(n_col):
                 try:
                     titulo = dataset.columns[title]
                     titulo = titulo.replace('"', '')
