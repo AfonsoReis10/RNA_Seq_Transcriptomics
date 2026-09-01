@@ -79,7 +79,7 @@ These results were consistent with the known biology and with previous analysis 
 
 ![SOM metagenes K-Means clustering results (K=20)](images/kmeans_20.png)
 
-![SOM Gene Set Enrichment results (cluster 8)](images/Frank_GSE_8_c8.png)
+![SOM Gene Set Enrichment results (cluster 8)](images/Frank_GSE_8_c8.png =100x20)
 
 ## Conclusions
 
